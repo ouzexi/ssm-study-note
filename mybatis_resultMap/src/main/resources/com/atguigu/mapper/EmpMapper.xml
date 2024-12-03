@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.mapper.EmpMapper">
+
+<!--    public Emp getEmpByEmpId(@Param("empId") String empId); -->
+<!--    sql语句可以起别名，select emp_id empId from t_emp where emp_id = #{empId} 此时可以查出来-->
+<!--    字段名可属性名不一致的情况，如果处理映射关系
+        1、为查询的字段设置别名，和属性名保持一致
+        2、当字段符合MySql的要求使用_，而属性符合java的要求使用驼峰
+        此时可以在MyBatis的核心配置文件config设置一个全局配置，可以自动将下划线映射为驼峰
+        mapUnderscoreToCamelCase - true 映射下划线为驼峰 emp_id > empId
+        3、使用resultMap自定义映射处理
+-->
+
+    <!--
+        resultMap：设置自定义的映射关系
+        id：唯一标识
+        type：处理映射关系的实体类的类型
+        常用的标签：
+        id：处理主键和实体类中属性的映射关系
+        result：处理普通字段和实体类中属性的映射关系
+        association：处理多对一的映射关系(处理实体类类型的属性)
+        collection：处理一对多的映射关系（处理集合类型的属性）
+        标签的属性：
+        column：设置映射关系中的字段名，必须是sql中查询出的某个字段
+        property：设置映射关系中的属性的属性名，必须是处理的实体类类型中的属性名
+    -->
+
+<!--    type - 处理的类型为Emp -->
+<!--    id - 设置主键和属性的映射关系 -->
+<!--    result - 设置普通字段和属性的映射关系 -->
+    <resultMap id="empResultMap" type="Emp">
+        <id column="emp_id" property="empId"></id>
+        <result column="emp_name" property="empName"></result>
+        <result column="age" property="age"></result>
+        <result column="gender" property="gender"></result>
+    </resultMap>
+
+<!--    这里的resultMap要对应上面resultMap标签的id值 -->
+    <select id="getEmpByEmpId" resultMap="empResultMap">
+        select * from t_emp where emp_id = #{empId}
+    </select>
+
+    <select id="getEmpByEmpIdOld" resultType="Emp">
+        <!-- select emp_id empId from t_emp where emp_id = #{empId} -->
+        select * from t_emp where emp_id = #{empId}
+    </select>
+
+<!--    Emp getEmpAndDeptByEmpId(@Param("empId") Integer empId); -->
+<!--    两表联查 - 结果有7种 所以不能用resultType -->
+<!--    t_emp.*, t_dept.* 是可以把重复的dept_id一列去除 也可以直接select * -->
+
+    <!--
+        处理多对一的映射关系：
+        1、级联方式处理
+        2、association处理
+        3、分步查询
+    -->
+
+    <resultMap id="EmpAndDeptResultMapOne" type="Emp">
+        <id column="emp_id" property="empId"></id>
+        <result column="emp_name" property="empName"></result>
+        <result column="age" property="age"></result>
+        <result column="gender" property="gender"></result>
+        <result column="dept_id" property="dept.deptId"></result>
+        <result column="dept_name" property="dept.deptName"></result>
+    </resultMap>
+
+    <resultMap id="EmpAndDeptResultMap" type="Emp">
+        <id column="emp_id" property="empId"></id>
+        <result column="emp_name" property="empName"></result>
+        <result column="age" property="age"></result>
+        <result column="gender" property="gender"></result>
+        <!--
+            association：处理多对一的映射关系（处理实体类类型的属性）
+            标签属性：
+            property：设置需要处理映射关系属性的属性名（如Emp类中有一个Dept dept属性）
+            javaType：设置要处理的属性的类型（如dept的类型为Dept实体类）
+            标签内的id和result标签：
+            column：对应表中的字段
+            property：对应Dept类的属性
+        -->
+        <association property="dept" javaType="Dept">
+            <id column="dept_id" property="deptId"></id>
+            <result column="dept_name" property="deptName"></result>
+        </association>
+    </resultMap>
+
+    <select id="getEmpAndDeptByEmpId" resultMap="EmpAndDeptResultMap">
+        select t_emp.*, t_dept.*
+        from t_emp
+        left join t_dept
+        on t_emp.dept_id = t_dept.dept_id
+        where t_emp.emp_id = #{empId}
+    </select>
+
+    <resultMap id="empAndDeptByStepResultMap" type="Emp">
+        <id column="emp_id" property="empId"></id>
+        <result column="emp_name" property="empName"></result>
+        <result column="age" property="age"></result>
+        <result column="gender" property="gender"></result>
+        <!--
+            association属性：
+            property：设置需要处理映射关系的属性的属性名
+            select：设置分步查询的sql的唯一标识（全类名+方法名，即执行该方法对应的sql）
+            column：将查询出的某个字段作为分步查询的sql的条件（如第一步查出的dept_id作为第二步的查询条件）
+            fetchType：在开启了演示加载的环境中，通过该属性设置当前的分步查询是否使用延迟加载
+            eager：立即加载 / lazy：延迟加载
+        -->
+        <association property="dept"
+                     fetchType="eager"
+                     select="com.atguigu.mapper.DeptMapper.getEmpAndDeptByStepTwo"
+                     column="dept_id">
+        </association>
+    </resultMap>
+
+<!--    Emp getEmpAndDeptByStepOne(@Param("empId") Integer empId); -->
+    <select id="getEmpAndDeptByStepOne" resultMap="empAndDeptByStepResultMap">
+        select * from t_emp where emp_id = #{empId}
+    </select>
+
+<!--    List<Emp> getDeptAndEmpByStepTwo(@Param("empId") Integer empId); -->
+    <select id="getDeptAndEmpByStepTwo" resultType="Emp">
+        select * from t_emp where dept_id = #{deptId}
+    </select>
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.mybatis.mapper.SpecialMapper">
+<!--    public List<User> getUserByLike(@Param("mohu") String mohu); -->
+    <select id="getUserByLike" resultType="User">
+--         select * from t_user where username like '%${}%'
+--         select * from t_user where username like concat('%', #{mohu}, '%')
+        select * from t_user where username like "%"${mohu}"%"
+    </select>
+
+<!--    void deleteMoreUser(@Param("ids") String ids); -->
+    <delete id="deleteMoreUser">
+        delete from t_user where id in(${ids});
+    </delete>
+
+<!--    List<User> getUserList(@Param("tableName") String tableName); -->
+    <select id="getUserList" resultType="User">
+        select * from ${tableName}
+    </select>
+
+<!--    void insertUser(User user); -->
+<!--    useGeneratedKeys：表示当前添加功能是否使用自增的主键-->
+<!--    keyProperty：把获取到的自增的主键，赋值到传输过来的实体类中的某个属性-->
+<!--    为什么不能直接返回，因为增删改都是只能返回影响的行数，类型为int，所以只能存储起来-->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        insert into t_user values(null, #{username}, #{password}, #{age}, #{gender}, #{email})
+    </insert>
+</mapper>

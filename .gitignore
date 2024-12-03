@@ -1,0 +1,13 @@
+.DS_Store
+.idea
+# *.iml
+.idea
+logs
+out
+gen
+target
+# Eclipse Project files
+.classpath
+.project
+.settings/
+.vscode/
